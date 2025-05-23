@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtoChatSimple.Server", "ProtoChatSimple.Server\ProtoChatSimple.Server.csproj", "{41E36C47-24EE-47C1-9A32-15086D163243}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtoChatSimple.Domain", "ProtoChatSimple.Domain\ProtoChatSimple.Domain.csproj", "{F67D5B8C-933F-430B-B8C5-90B0D24F44CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtoChatSimple.Client", "ProtoChatSimple.Client\ProtoChatSimple.Client.csproj", "{3815D104-AD6C-454E-8352-AD6A557CA2BD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{41E36C47-24EE-47C1-9A32-15086D163243}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41E36C47-24EE-47C1-9A32-15086D163243}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41E36C47-24EE-47C1-9A32-15086D163243}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41E36C47-24EE-47C1-9A32-15086D163243}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F67D5B8C-933F-430B-B8C5-90B0D24F44CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F67D5B8C-933F-430B-B8C5-90B0D24F44CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F67D5B8C-933F-430B-B8C5-90B0D24F44CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F67D5B8C-933F-430B-B8C5-90B0D24F44CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3815D104-AD6C-454E-8352-AD6A557CA2BD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3815D104-AD6C-454E-8352-AD6A557CA2BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3815D104-AD6C-454E-8352-AD6A557CA2BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3815D104-AD6C-454E-8352-AD6A557CA2BD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
