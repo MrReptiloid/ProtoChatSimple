@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography;
 using Grpc.Core;
 using Grpc.Net.Client;
+using ProtoChatSimple.Proto;
 
 var httpHandler = new HttpClientHandler
 {

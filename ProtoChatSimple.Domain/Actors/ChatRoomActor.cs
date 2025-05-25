@@ -1,4 +1,5 @@
 using Akka.Actor;
+using ProtoChatSimple.Proto;
 
 namespace ProtoChatSimple.Domain.Actors;
 

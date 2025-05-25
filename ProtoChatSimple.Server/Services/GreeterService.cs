@@ -1,4 +1,5 @@
 using Grpc.Core;
+using ProtoChatSimple.Proto;
 using ProtoChatSimple.Server;
 
 namespace ProtoChatSimple.Server.Services;

@@ -2,6 +2,7 @@ using Akka.Actor;
 using Grpc.Core;
 using Microsoft.AspNetCore.Connections;
 using ProtoChatSimple.Domain.Actors;
+using ProtoChatSimple.Proto;
 
 namespace ProtoChatSimple.Server.Services;
 
@@ -31,26 +32,34 @@ public class ChatServiceImpl : Chat.ChatBase
 
         try
         {
-            await foreach (var request in requestStream.ReadAllAsync(context.CancellationToken))
+            await foreach (ChatMessage request in requestStream.ReadAllAsync(context.CancellationToken))
             {
                 await responseStream.WriteAsync(request);
             }
         }
-        catch (IOException ex) when (ex.InnerException is ConnectionResetException)
+        catch (IOException ex) when (ex.InnerException is ConnectionAbortedException)
         {
-            _logger.LogWarning("Клієнт закрив з'єднання: {Message}", ex.Message);
+            _logger.LogInformation("HTTP/2 connection aborted: {Message}", ex.InnerException.Message);
+        }
+        catch (IOException ex)
+        {
+            _logger.LogWarning("Client closed the connection (IO): {Message}", ex.Message);
+        }
+        catch (ConnectionAbortedException ex)
+        {
+            _logger.LogInformation("HTTP/2 connection aborted: {Message}", ex.Message);
         }
         catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
         {
-            _logger.LogInformation("gRPC виклик був скасований (client disconnect)");
+            _logger.LogInformation("gRPC call was cancelled (client disconnect)");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Несподівана помилка в ChatStream");
+            _logger.LogError(ex, "Unexpected error in ChatStream");
         }
         finally
         {
-            _logger.LogInformation("З'єднання завершено");
+            _logger.LogInformation("Connection closed");
         }
     }
 }

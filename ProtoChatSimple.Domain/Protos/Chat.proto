@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option csharp_namespace = "ProtoChatSimple.Proto";
+
 service Chat {
   rpc ChatStream(stream ChatMessage) returns (stream ChatMessage);
 }

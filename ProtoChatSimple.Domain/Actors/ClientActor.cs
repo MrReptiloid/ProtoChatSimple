@@ -1,5 +1,6 @@
 using Akka.Actor;
 using Grpc.Core;
+using ProtoChatSimple.Proto;
 
 namespace ProtoChatSimple.Domain.Actors;
 
