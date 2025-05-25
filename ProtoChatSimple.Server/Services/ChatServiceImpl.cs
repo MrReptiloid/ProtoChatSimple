@@ -8,15 +8,15 @@ namespace ProtoChatSimple.Server.Services;
 
 public class ChatServiceImpl : Chat.ChatBase
 {
-    private readonly ActorSystem _actorSystem;
     private readonly IActorRef _chatRoomActor;
-
+    private readonly IActorRef _clientMangerActor;
+    
     private readonly ILogger<ChatServiceImpl> _logger;
 
-    public ChatServiceImpl(ActorSystem actorSystem, IActorRef chatRoomActor, ILogger<ChatServiceImpl> logger)
+    public ChatServiceImpl(IActorRef chatRoomActor, IActorRef clientManagerActor, ILogger<ChatServiceImpl> logger)
     {
-        _actorSystem = actorSystem;
         _chatRoomActor = chatRoomActor;
+        _clientMangerActor = clientManagerActor;
 
         _logger = logger;
     }
@@ -26,15 +26,18 @@ public class ChatServiceImpl : Chat.ChatBase
         IServerStreamWriter<ChatMessage> responseStream,
         ServerCallContext context)
     {
-        IActorRef clientActor = _actorSystem.ActorOf(
-            Props.Create(() => new ClientActor(responseStream)));
+        var clientRegistered = await _clientMangerActor
+            .Ask<ClientManagerActor.ClientRegistered>(
+                new ClientManagerActor.RegisterClient(Guid.NewGuid().ToString(), responseStream));
+        
+        IActorRef clientActor = clientRegistered.Actor;
         _chatRoomActor.Tell(new ChatRoomActor.Join(clientActor));
-
+        
         try
         {
             await foreach (ChatMessage request in requestStream.ReadAllAsync(context.CancellationToken))
             {
-                await responseStream.WriteAsync(request);
+                _chatRoomActor.Tell(new ChatRoomActor.Broadcast(request));
             }
         }
         catch (IOException ex) when (ex.InnerException is ConnectionAbortedException)

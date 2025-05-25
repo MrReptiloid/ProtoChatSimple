@@ -6,7 +6,7 @@ namespace ProtoChatSimple.Domain.Actors;
 public class ChatRoomActor : ReceiveActor
 {
     private readonly HashSet<IActorRef> _clients = new();
-    private readonly IActorRef _chatHistoryActor;
+    private IActorRef _chatHistoryActor;
     
     public ChatRoomActor(IActorRef chatHistoryActor)
     {
@@ -33,8 +33,48 @@ public class ChatRoomActor : ReceiveActor
                 client.Tell(msg.Message);
             }
         });
+        
+        Receive<ClientDisconected>(msg =>
+        {
+            _clients.Remove(msg.Client);
+        });
+
+        Receive<Terminated>(t =>
+        {
+            if (t.ActorRef.Equals(_chatHistoryActor))
+            {
+                _chatHistoryActor = Context.ActorOf(Props.Create(() => new ChatHistoryActor()), "ChatHistoryActor");
+                Context.Watch(_chatHistoryActor);
+            }
+        });
     }
 
-    public record Join(IActorRef Client);
-    public record Broadcast(ChatMessage Message);
+    protected override SupervisorStrategy SupervisorStrategy()
+    {
+        return new OneForOneStrategy(
+            maxNrOfRetries: 5,
+            withinTimeRange: TimeSpan.FromMinutes(1),
+            decider: Decider.From(exception =>
+            {
+                switch (exception)
+                {
+                    case IOException:
+                        Console.WriteLine("[Supervisor] Restarting ChatHistoryActor due to IOException.");
+                        return Directive.Restart;
+
+                    case TimeoutException:
+                        Console.WriteLine("[Supervisor] Resuming after TimeoutException.");
+                        return Directive.Resume;
+
+                    default:
+                        Console.WriteLine("[Supervisor] Stopping actor due to unknown error: " + exception.Message);
+                        return Directive.Stop;
+                }
+            })
+        );
+    }
+
+    public sealed record Join(IActorRef Client);
+    public sealed record Broadcast(ChatMessage Message);
+    public sealed record ClientDisconected(IActorRef Client);
 }

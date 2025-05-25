@@ -16,16 +16,19 @@ builder.WebHost.ConfigureKestrel(options =>
 ActorSystem actorSystem = ActorSystem.Create("ChatSystem");
 IActorRef chatHistoryActor = actorSystem.ActorOf(Props.Create(() => new ChatHistoryActor()));
 IActorRef chatRoomActor = actorSystem.ActorOf(Props.Create(() => new ChatRoomActor(chatHistoryActor)));
+IActorRef clientManagerActor = actorSystem.ActorOf(Props.Create(() => new ClientManagerActor()));
 
 builder.Services.AddSingleton(actorSystem);
 builder.Services.AddSingleton(chatRoomActor);
+builder.Services.AddSingleton(chatHistoryActor);
+builder.Services.AddSingleton(clientManagerActor);
 
 // Add services to the container.
 builder.Services.AddGrpc();
 builder.Services.AddSingleton<ChatServiceImpl>(provider =>
     new ChatServiceImpl(
-        provider.GetRequiredService<ActorSystem>(),
-        provider.GetRequiredService<IActorRef>(),
+        chatRoomActor,
+        clientManagerActor,
         provider.GetRequiredService<ILogger<ChatServiceImpl>>()
 ));
 

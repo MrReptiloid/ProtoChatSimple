@@ -11,9 +11,10 @@ public class ChatHistoryActor : ReceiveActor
 
     public ChatHistoryActor()
     {
+        Console.WriteLine(Path.GetFullPath(_filepath));
         if (File.Exists(_filepath))
         {
-            var json = File.ReadAllText(_filepath);
+            string json = File.ReadAllText(_filepath);
             _chatHistory = JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? new List<ChatMessage>();
         }
 
@@ -30,7 +31,7 @@ public class ChatHistoryActor : ReceiveActor
     {
         try
         {
-            var json = JsonSerializer.Serialize(_chatHistory);
+            string json = JsonSerializer.Serialize(_chatHistory, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_filepath, json);
         }
         catch (UnauthorizedAccessException)
