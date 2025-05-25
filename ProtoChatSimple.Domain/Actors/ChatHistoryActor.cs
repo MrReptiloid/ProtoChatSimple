@@ -64,6 +64,9 @@ public class ChatHistoryActor : ReceiveActor
         }
     }
     
+    public static Props Create() => 
+        Akka.Actor.Props.Create(() => new ChatHistoryActor());
+    
     public record GetHistory();
     public record SaveMessage(ChatMessage Message);
 }

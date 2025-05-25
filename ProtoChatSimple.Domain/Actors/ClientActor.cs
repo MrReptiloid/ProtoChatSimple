@@ -24,4 +24,7 @@ public class ClientActor : ReceiveActor
             }
         });
     }
+    
+    public static Props Create(IServerStreamWriter<ChatMessage> stream) => 
+        Akka.Actor.Props.Create(() => new ClientActor(stream));
 }

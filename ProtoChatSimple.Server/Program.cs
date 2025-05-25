@@ -14,9 +14,9 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 ActorSystem actorSystem = ActorSystem.Create("ChatSystem");
-IActorRef chatHistoryActor = actorSystem.ActorOf(Props.Create(() => new ChatHistoryActor()));
-IActorRef chatRoomActor = actorSystem.ActorOf(Props.Create(() => new ChatRoomActor(chatHistoryActor)));
-IActorRef clientManagerActor = actorSystem.ActorOf(Props.Create(() => new ClientManagerActor()));
+IActorRef chatHistoryActor = actorSystem.ActorOf(ChatHistoryActor.Create());
+IActorRef chatRoomActor = actorSystem.ActorOf(ChatRoomActor.Create(chatHistoryActor));
+IActorRef clientManagerActor = actorSystem.ActorOf(ClientManagerActor.Create());
 
 builder.Services.AddSingleton(actorSystem);
 builder.Services.AddSingleton(chatRoomActor);

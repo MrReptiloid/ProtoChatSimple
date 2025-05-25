@@ -34,7 +34,7 @@ public class ChatRoomActor : ReceiveActor
             }
         });
         
-        Receive<ClientDisconected>(msg =>
+        Receive<ClientDisconnected>(msg =>
         {
             _clients.Remove(msg.Client);
         });
@@ -43,7 +43,7 @@ public class ChatRoomActor : ReceiveActor
         {
             if (t.ActorRef.Equals(_chatHistoryActor))
             {
-                _chatHistoryActor = Context.ActorOf(Props.Create(() => new ChatHistoryActor()), "ChatHistoryActor");
+                _chatHistoryActor = Context.ActorOf(ChatHistoryActor.Create(), "ChatHistoryActor");
                 Context.Watch(_chatHistoryActor);
             }
         });
@@ -74,7 +74,10 @@ public class ChatRoomActor : ReceiveActor
         );
     }
 
+    public static Props Create(IActorRef chatHistoryActor) =>
+        Akka.Actor.Props.Create(() => new ChatRoomActor(chatHistoryActor));
+    
     public sealed record Join(IActorRef Client);
     public sealed record Broadcast(ChatMessage Message);
-    public sealed record ClientDisconected(IActorRef Client);
+    public sealed record ClientDisconnected(IActorRef Client);
 }
