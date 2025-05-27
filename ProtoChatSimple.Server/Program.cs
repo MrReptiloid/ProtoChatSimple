@@ -1,6 +1,7 @@
 using Akka.Actor;
 using Akka.Cluster.Tools.Singleton;
 using Akka.Configuration;
+using ProtoChatSimple.Domain;
 using ProtoChatSimple.Domain.Actors;
 using ProtoChatSimple.Server.Services;
 
@@ -37,9 +38,13 @@ builder.Services.AddSingleton<ChatServiceImpl>(provider =>
 
 builder.Services.AddGrpc();
 
+builder.Services.AddHealthChecks()
+    .AddCheck<AkkaClusterHealthCheck>("AkkaClusterHealthCheck");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.MapHealthChecks("/healthz");
 app.MapGrpcService<GreeterService>();
 app.MapGrpcService<ChatServiceImpl>();
 app.MapGet("/",
