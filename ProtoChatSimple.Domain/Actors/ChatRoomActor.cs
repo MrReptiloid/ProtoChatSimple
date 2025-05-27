@@ -15,7 +15,8 @@ public class ChatRoomActor : ReceiveActor
         Receive<Join>(async msg =>
         {
             _clients.Add(msg.Client);
-
+            Context.Watch(msg.Client);
+            
             List<ChatMessage> history = await _chatHistoryActor.Ask<List<ChatMessage>>(new ChatHistoryActor.GetHistory());
 
             foreach (ChatMessage message in history)
@@ -37,15 +38,6 @@ public class ChatRoomActor : ReceiveActor
         Receive<ClientDisconnected>(msg =>
         {
             _clients.Remove(msg.Client);
-        });
-
-        Receive<Terminated>(t =>
-        {
-            if (t.ActorRef.Equals(_chatHistoryActor))
-            {
-                _chatHistoryActor = Context.ActorOf(ChatHistoryActor.Create(), "ChatHistoryActor");
-                Context.Watch(_chatHistoryActor);
-            }
         });
     }
 

@@ -3,6 +3,8 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+chat_history.json
+
 # dotenv files
 .env
 

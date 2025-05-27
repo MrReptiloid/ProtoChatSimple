@@ -1,4 +1,6 @@
 using Akka.Actor;
+using Akka.Cluster.Tools.Singleton;
+using Akka.Configuration;
 using ProtoChatSimple.Domain.Actors;
 using ProtoChatSimple.Server.Services;
 
@@ -13,24 +15,27 @@ builder.WebHost.ConfigureKestrel(options =>
     });
 });
 
-ActorSystem actorSystem = ActorSystem.Create("ChatSystem");
-IActorRef chatHistoryActor = actorSystem.ActorOf(ChatHistoryActor.Create());
-IActorRef chatRoomActor = actorSystem.ActorOf(ChatRoomActor.Create(chatHistoryActor));
+Config akkaConfig = ConfigurationFactory.ParseString(File.ReadAllText("akka.conf")); 
+
+ActorSystem actorSystem = ActorSystem.Create("ChatSystem", akkaConfig);
 IActorRef clientManagerActor = actorSystem.ActorOf(ClientManagerActor.Create());
 
+(IActorRef? chatRoomProxy, IActorRef? chatHistoryProxy) = InitClusterSingletons(actorSystem);
+
 builder.Services.AddSingleton(actorSystem);
-builder.Services.AddSingleton(chatRoomActor);
-builder.Services.AddSingleton(chatHistoryActor);
+builder.Services.AddSingleton(chatRoomProxy);
+builder.Services.AddSingleton(chatHistoryProxy);
 builder.Services.AddSingleton(clientManagerActor);
 
-// Add services to the container.
-builder.Services.AddGrpc();
+
 builder.Services.AddSingleton<ChatServiceImpl>(provider =>
     new ChatServiceImpl(
-        chatRoomActor,
+        chatRoomProxy,
         clientManagerActor,
         provider.GetRequiredService<ILogger<ChatServiceImpl>>()
-));
+    ));
+
+builder.Services.AddGrpc();
 
 var app = builder.Build();
 
@@ -42,3 +47,40 @@ app.MapGet("/",
         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
 app.Run();
+
+static (IActorRef chatRoomProxy, IActorRef chatHistoryProxy) InitClusterSingletons(ActorSystem system)
+{
+    Props historySingletonProps = ClusterSingletonManager.Props(
+        ChatHistoryActor.Create(),
+        PoisonPill.Instance,
+        ClusterSingletonManagerSettings.Create(system).WithRole("chat-server")
+    );
+    
+    system.ActorOf(historySingletonProps, "chatHistorySingleton");
+    
+    IActorRef chatHistoryProxy = system.ActorOf(
+        ClusterSingletonProxy.Props(
+            "/user/chatHistorySingleton",
+            ClusterSingletonProxySettings.Create(system).WithRole("chat-server")
+        ),
+        "chatHistoryProxy"
+    );
+
+    Props roomSingletonProps = ClusterSingletonManager.Props(
+        ChatRoomActor.Create(chatHistoryProxy),  // proxy
+        PoisonPill.Instance,
+        ClusterSingletonManagerSettings.Create(system).WithRole("chat-server")
+    );
+    
+    system.ActorOf(roomSingletonProps, "chatRoomSingleton");
+
+    IActorRef chatRoomProxy = system.ActorOf(
+        ClusterSingletonProxy.Props(
+            "/user/chatRoomSingleton",
+            ClusterSingletonProxySettings.Create(system).WithRole("chat-server")
+        ),
+        "chatRoomProxy"
+    );
+
+    return (chatRoomProxy, chatHistoryProxy);
+}
