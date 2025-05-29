@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+chat_journal.db
+chat_snapshots.db
 
 # User-specific files
 *.rsuser

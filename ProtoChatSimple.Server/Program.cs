@@ -1,4 +1,5 @@
 using Akka.Actor;
+using Akka.Configuration;
 using ProtoChatSimple.Domain.Actors;
 using ProtoChatSimple.Server.Services;
 
@@ -13,7 +14,9 @@ builder.WebHost.ConfigureKestrel(options =>
     });
 });
 
-ActorSystem actorSystem = ActorSystem.Create("ChatSystem");
+Config akkaConfig = ConfigurationFactory.ParseString(File.ReadAllText("akka.conf"));
+
+ActorSystem actorSystem = ActorSystem.Create("ChatSystem", akkaConfig);
 IActorRef chatHistoryActor = actorSystem.ActorOf(ChatHistoryActor.Create());
 IActorRef chatRoomActor = actorSystem.ActorOf(ChatRoomActor.Create(chatHistoryActor));
 IActorRef clientManagerActor = actorSystem.ActorOf(ClientManagerActor.Create());

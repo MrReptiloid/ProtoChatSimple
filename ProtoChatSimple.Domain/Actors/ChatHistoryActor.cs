@@ -1,72 +1,59 @@
-using System.Text.Json;
 using Akka.Actor;
+using Akka.Event;
+using Akka.Persistence;
 using ProtoChatSimple.Proto;
 
 namespace ProtoChatSimple.Domain.Actors;
 
-public class ChatHistoryActor : ReceiveActor
+public class ChatHistoryActor : ReceivePersistentActor
 {
     private readonly List<ChatMessage> _chatHistory = new();
-    private readonly string _filepath = "chat_history.json";
+    public override string PersistenceId { get; } = "chat-history-actor";
 
     public ChatHistoryActor()
     {
-        Console.WriteLine(Path.GetFullPath(_filepath));
-        if (File.Exists(_filepath))
+        Recover<ChatMessage>(msg =>
         {
-            string json = File.ReadAllText(_filepath);
-            _chatHistory = JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? new List<ChatMessage>();
-        }
-
-        Receive<GetHistory>(_ => Sender.Tell(_chatHistory.ToList()));
-
-        Receive<SaveMessage>(msg =>
-        {
-            _chatHistory.Add(msg.Message);
-            SaveToFile();
+            _chatHistory.Add(msg);
         });
-    }
+        
+        Command<SaveMessage>(cmd =>
+        {
+            Persist(cmd.Message, msg =>
+            {
+                _chatHistory.Add(msg);
+                SaveSnapshot(_chatHistory);
+            });
+        });
 
-    public void SaveToFile()
-    {
-        try
+        Command<GetHistory>(_ =>
         {
-            string json = JsonSerializer.Serialize(_chatHistory, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_filepath, json);
-        }
-        catch (UnauthorizedAccessException)
+            Sender.Tell(_chatHistory);
+        });
+        
+        Command<SaveSnapshotSuccess>(msg =>
         {
-            Console.WriteLine("Error: Access to the file is denied.");
-        }
-        catch (ArgumentException)
+            Context.GetLogger().Info($"Snapshot saved successfully: {msg.Metadata}");
+        });
+
+        Command<SaveSnapshotFailure>(msg =>
         {
-            Console.WriteLine("Error: The file path is invalid.");
-        }
-        catch (PathTooLongException)
+            Context.GetLogger().Warning($"Snapshot failed: {msg.Metadata}, reason: {msg.Cause.Message}");
+        });
+        
+        Recover<SnapshotOffer>(offer =>
         {
-            Console.WriteLine("Error: The file path is too long.");
-        }
-        catch (DirectoryNotFoundException)
-        {
-            Console.WriteLine("Error: The directory was not found.");
-        }
-        catch (IOException ex)
-        {
-            Console.WriteLine($"Error: An I/O error occurred. Details: {ex.Message}");
-        }
-        catch (NotSupportedException)
-        {
-            Console.WriteLine("Error: The file path format is not supported.");
-        }
-        catch (System.Security.SecurityException)
-        {
-            Console.WriteLine("Error: You do not have the required permissions.");
-        }
+            if (offer.Snapshot is List<ChatMessage> snapshot)
+            {
+                _chatHistory.Clear();
+                _chatHistory.AddRange(snapshot);
+            }
+        });
     }
     
     public static Props Create() => 
         Akka.Actor.Props.Create(() => new ChatHistoryActor());
     
-    public record GetHistory();
     public record SaveMessage(ChatMessage Message);
+    public class GetHistory { }
 }
